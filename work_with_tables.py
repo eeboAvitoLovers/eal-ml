@@ -13,16 +13,16 @@ with open('model.pkl', 'rb') as f:
 
 tables = ['messages', 'clusters']
 messages = pd.read_sql_table(tables[0], con=engine, columns=['id', 'message'])
-clusters = model.predict(messages['message'])
+clusters = pd.DataFrame(model.predict(messages['message']), columns=['cluster'])
 
-ready_data = pd.concat(objs=[messages, pd.DataFrame(clusters, columns=['cluster'])], axis=1)
+ready_data = pd.concat(objs=[messages, clusters], axis=1)
 
 fig = plt.figure(figsize=(5, 4), dpi=150)
 sns.countplot(data=ready_data, x='cluster');
 plt.savefig('distrib_by_class.png')
 
-clusters = pd.DataFrame(clusters, columns=['clusters'])
 clusters['ticket_id'] = messages['id']
+clusters = clusters[['ticket_id', 'cluster']]
 clusters.to_sql('clusters', con=engine, if_exists='replace', index=False)
 
 clust = pd.read_sql_table(tables[1], con=engine)
