@@ -26,4 +26,3 @@ clusters = clusters[['ticket_id', 'cluster']]
 clusters.to_sql('clusters', con=engine, if_exists='replace', index=False)
 
 clust = pd.read_sql_table(tables[1], con=engine)
-print(clust)
