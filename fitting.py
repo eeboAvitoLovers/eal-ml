@@ -114,7 +114,7 @@ print('Davies-Bouldin index:', best_kmeans_davies_bouldin)
     #visualizer.show()
 
 # Выберем значение 13, которое подходит по методу локтя и колена
-k_means = KMeans(n_clusters=13)
+k_means = KMeans(n_clusters=11)
 # найдем предсказания
 cluster_labels = k_means.fit_predict(result_words)
 

@@ -4,25 +4,41 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import pickle
-from sqlalchemy import create_engine, inspect
+import numpy as np
+from sqlalchemy import create_engine
+from nltk.corpus import stopwords as sw
+from sklearn.feature_extraction.text import CountVectorizer
+import schedule
+import time
 
 engine = create_engine("postgresql://eebo:eebo@194.87.234.96:5432/eebo")
 
 with open('model.pkl', 'rb') as f:
     model = pickle.load(f)
 
-tables = ['messages', 'clusters']
-messages = pd.read_sql_table(tables[0], con=engine, columns=['id', 'message'])
-clusters = pd.DataFrame(model.predict(messages['message']), columns=['cluster'])
+def process_new_data():
+    # Получаем новые данные из базы данных
+    new_data = pd.read_sql_query("SELECT m.id, m.message FROM messages m LEFT JOIN clusters c ON m.id = c.ticket_id WHERE c.cluster IS NULL", con=engine)
 
-ready_data = pd.concat(objs=[messages, clusters], axis=1)
+    # Делаем предсказание кластеров для новых данных
+    clusters = pd.DataFrame(model.predict(new_data['message']), columns=['cluster'])
 
-fig = plt.figure(figsize=(5, 4), dpi=150)
-sns.countplot(data=ready_data, x='cluster');
-plt.savefig('distrib_by_class.png')
+    # Объединяем новые данные с предсказанными кластерами
+    new_data = pd.concat([new_data, clusters], axis=1)
 
-clusters['ticket_id'] = messages['id']
-clusters = clusters[['ticket_id', 'cluster']]
-clusters.to_sql('clusters', con=engine, if_exists='replace', index=False)
+    # Записываем кластеры в таблицу clusters
+    clusters['ticket_id'] = new_data['id']
+    clusters = clusters[['ticket_id', 'cluster']]
+    clusters.to_sql('clusters', con=engine, if_exists='append', index=False)
 
-clust = pd.read_sql_table(tables[1], con=engine)
+    fig = plt.figure(figsize=(5, 4), dpi=150)
+    sns.countplot(data=new_data, x='cluster');
+    plt.savefig('distrib_by_class.png')
+
+# Запускаем функцию process_new_data каждый час
+schedule.every(1).hours.do(process_new_data)
+
+while True:
+    schedule.run_pending()
+    time.sleep(60)
+
