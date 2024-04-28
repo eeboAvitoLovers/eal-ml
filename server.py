@@ -1,9 +1,8 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-# import numpy as np
-# import pandas as pd
-# from nltk.corpus import stopwords as sw
+import pandas as pd
 import pickle
+
 with open('model.pkl', 'rb') as f:
     model = pickle.load(f)
 
@@ -14,17 +13,10 @@ class InputData(BaseModel):
 
 class OutputData(BaseModel):
     message: str
-    cluster: str
+    cluster: int
 
 @app.post("/predict/")
 async def predict_cluster(data: InputData) -> OutputData:
-    input_string = data.message
-    cluster_id = "5"
-    return  OutputData(message=input_string, cluster=cluster_id)
-
-
-def predict(data):
-    input_string = data.message
+    input_string = [data.message]
     preds = model.predict(input_string)
-    new['cluster'] = preds
-    
+    return OutputData(message=data.message, cluster=preds[0])

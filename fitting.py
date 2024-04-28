@@ -16,7 +16,7 @@ from sklearn.ensemble import RandomForestClassifier
 # Загрузим данные
 data = pd.read_csv('raw_data.csv', encoding='UTF-8')
 
-print(data.head(), end='\n')
+#print(data.head(), end='\n')
 
 data = data['message']
 
